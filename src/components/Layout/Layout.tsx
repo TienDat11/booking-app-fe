@@ -17,12 +17,13 @@ import { Header } from 'antd/es/layout/layout';
 const { Sider, Content } = Layout;
 const LayoutApp = () => {
     const [collapsed, setCollapsed] = useState(false);
+    const navigator = useNavigate()
 
 
     // Logout
     const handleLogout = () => {
         localStorage.clear();
-        // navigator('/login');
+        navigator('/login');
     };
     const items: MenuProps['items'] = [
         {

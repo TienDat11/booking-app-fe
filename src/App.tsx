@@ -14,7 +14,7 @@ function App() {
         <Route path='/' element={<LayoutApp />}>
           <Route element={<ProtectedRoute />}>
             <Route element={<PrivateRoute />}>
-              <Route path='/' element={<MeetingCalendar />} />
+              <Route path='/' element={<MeetingCalendar />} />    
             </Route>
           </Route>
       </Route>
