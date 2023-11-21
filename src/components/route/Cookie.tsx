@@ -7,7 +7,7 @@ const getCookie = (str: string) => {
     case 'token':
       return Cookies.get('token');
     default:
-      console.log("Not Found");
+      console.log('Not Found');
       break;
   }
 };
