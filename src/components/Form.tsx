@@ -20,9 +20,14 @@ const FormLogin: React.FC = () => {
      Navigate('/');
   };
 
+  const handleClose = () => {
+    Modal.destroyAll();
+    Navigate('/login')
+  }
+
   const handleError = (errorMessage: string) => {
     Modal.destroyAll();
-    confirm(errorMessage, false, handleOk);
+    confirm(errorMessage, false, handleClose);
   };
 
   const onFinish = async (values: any) => {
@@ -40,7 +45,7 @@ const FormLogin: React.FC = () => {
       })
       .catch(error => {
         const errorMessage =
-          error.response?.data?.message || 'Có 1 lỗi xảy ra từ serve';
+          error.response?.data?.message || 'Có 1 lỗi xảy ra từ server';
         handleError(errorMessage);
       });
 
@@ -141,3 +146,5 @@ const FormLogin: React.FC = () => {
 };
 
 export default FormLogin;
+
+

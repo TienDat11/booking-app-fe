@@ -1,424 +1,577 @@
-import React, { useState } from 'react';
-import { Calendar, Modal, Form, Select, Button, DatePicker, Space } from 'antd';
+import { useEffect, useState } from 'react';
+import {
+  Calendar,
+  Modal,
+  Button,
+  Form,
+  Input,
+  Checkbox,
+  DatePicker,
+  Select,
+  List,
+  Typography,
+  Space,
+  Popover,
+} from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
+import axios from 'axios';
+import getCookie from './route/Cookie';
+
+const { Title } = Typography;
 
 interface BookingData {
+  title: string,
   booking_id: number | null;
   time_start: Dayjs | null;
   time_end: Dayjs | null;
-  employee_id: number[];
+  user_id: number[];
   room_id: number | null;
   room_name: string;
-  employee_name: string[];
+  user_name: string[];
 }
 
-const bookingData: BookingData[] = [
-  {
-    booking_id: 1,
-    time_start: dayjs('2023-11-14T10:00:00'),
-    time_end: dayjs('2023-11-14T12:00:00'),
-    employee_id: [1, 2],
-    room_id: 1,
-    room_name: 'Tan Tam',
-    employee_name: ['John', 'Jane'],
-  },
-  {
-    booking_id: 2,
-    time_start: dayjs('2023-11-14T10:00:00'),
-    time_end: dayjs('2023-11-14T12:00:00'),
-    employee_id: [1, 8],
-    room_id: 2,
-    room_name: 'Tan Tam',
-    employee_name: ['John', 'Jack'],
-  },
-  {
-    booking_id: 3,
-    time_start: dayjs('2023-11-14T10:00:00'),
-    time_end: dayjs('2023-11-14T12:00:00'),
-    employee_id: [1, 5],
-    room_id: 3,
-    room_name: 'Tan Tam',
-    employee_name: ['John', 'Ben'],
-  },
-];
+interface DataType {
+  user_id: number;
+  role_id: number[];
+  user_name: string;
+  role_name: string[];
+  phone_number: string;
+  email: string;
+}
 
-const roomColors: string[] | null = ['#5082FF', '#FF6B6B', '#FFC154']; // Mảng các màu sắc cho từng phòng
-
-const MeetingCalendar: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
-  const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
-  const [visible, setVisible] = useState(false);
-  const [modalContent, setModalContent] = useState<BookingData[]>([]);
+interface Room {
+  room_id: number;
+  room_name: string;
+  status: boolean;
+}
+const BookingCalendar = () => {
+  const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
+  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(
+    null
+  );
+  const [updateModalVisible, setUpdateModalVisible] = useState<boolean>(false);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [rooms, setRooms] = useState<Room[] | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [bookingData, setBookingData] = useState<BookingData[]>([]);
+  const [employees, setEmployees] = useState([] as DataType[]);
   const [form] = Form.useForm();
+  const modalRoot = document.createElement('div');
+  document.body.appendChild(modalRoot);
+  const url = 'https://c1a4-210-245-110-144.ngrok-free.app';
+  const token = getCookie('token');
 
-  const handleDateSelect = (date: Dayjs | null) => {
-    setSelectedDate(date);
-    setSelectedRoom(null);
+  const fetchEmployees = async () => {
+    try {
+      const res = await axios.get(url + '/v1/users', {
+        withCredentials: true,
+        headers: {
+          'ngrok-skip-browser-warning': 'any',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setEmployees(res.data.list_users);
+    } catch (error: any) {
+      console.log(error.response.data.error);
+    }
   };
-
-  const handleRoomSelect = (roomId: number | null) => {
-    if (roomId) {
-      setSelectedRoom(roomId);
-      const events = bookingData.filter(
-        (booking) =>
-          dayjs(booking.time_start).isSame(selectedDate, 'day') &&
-          booking.room_id === roomId
-      );
-      setModalContent(events);
-      setVisible(true);
+  const fetchRooms = async () => {
+    try {
+      const response = await axios.get(`${url}/v1/rooms`, {
+        params: {
+          page: currentPage,
+        },
+        withCredentials: true,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'ngrok-skip-browser-warning': 'any',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Ngrok-Trace-Id': 'bc47d5235e969cbcdd63082f9efdeb9c',
+          Server: 'Werkzeug/3.0.0 Python/3.12.0',
+          'cache-control': 'no-cache,private',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setRooms(response.data.rooms);
+    } catch (error: any | null) {
+      console.log(error);
+    }
+  };
+  const fetchBooking = async () => {
+    try {
+      const res = await axios.get(url + '/v1/bookings', {
+        withCredentials: true,
+        headers: {
+          'ngrok-skip-browser-warning': 'any',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setBookingData(res.data.bookings);
+      console.log(res.data.bookings);
+    } catch (error) {
+      console.log(error);
     }
   };
 
-  const handleCloseModal = () => {
-    setVisible(false);
+  useEffect(() => {
+    fetchBooking();
+    fetchEmployees();
+    fetchRooms();
+  }, []);
+
+  const handleDateSelect = (value: Dayjs) => {
+    const selectedDate = value.format('YYYY-MM-DD');
+    const selectedBooking = bookingData.find(booking =>
+      dayjs(booking.time_start)?.isSame(selectedDate, 'day')
+    );
+    setSelectedBooking(selectedBooking || null);
+  };
+  const handleUpdateModalClose = () => {
+    setUpdateModalVisible(false);
+    Modal.destroyAll();
+    form.resetFields();
+  };
+  const handleEditModalOpen = () => {
+    setEditModalVisible(true);
   };
 
-  const handleBookingSubmit = (values: any) => {
-    const { employee_id, time_start, time_end } = values;
-    const newBooking: BookingData = {
-      booking_id: bookingData.length + 1,
-      time_start: dayjs(time_start),
-      time_end: dayjs(time_end),
-      employee_id,
-      room_id: selectedRoom,
-      room_name: bookingData.find((booking) => booking.room_id === selectedRoom)?.room_name || '',
-      employee_name: ['Hello', 'World'],
+  const handleEditModalClose = () => {
+    setEditModalVisible(false);
+    Modal.destroyAll();
+    form.resetFields();
+  };
+
+  const handleDeleteModalOpen = () => {
+    setDeleteModalVisible(true);
+  };
+
+  const handleDeleteModalClose = () => {
+    setDeleteModalVisible(false);
+    Modal.destroyAll();
+  };
+
+  const handleEditBooking = async (values: BookingData) => {
+    const formattedBookingData = {
+      ...values,
+      user_id: values.user_id,
+      room_id: selectedBooking?.room_id,
+      time_start: values.time_start!.format(),
+      time_end: values.time_end!.format(),
     };
 
-    bookingData.push(newBooking);
-    form.resetFields();
-    setVisible(false);
+    try {
+      const res = await axios.put(
+        `${url}/v1/bookings/${selectedBooking?.booking_id}`,
+        formattedBookingData,
+        {
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setBookingData(res.data.booking);
+      handleEditModalClose();
+      setTimeout(() => {
+        Modal.success({
+          title: `Booking Updated Success`,
+        });
+        Modal.destroyAll();
+      }, 3000);
+      fetchBooking();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
+  const handleDeleteBooking = (id: number) => {
+    axios
+      .delete(url + '/v1/bookings/' + id, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then(res => {
+        setBookingData(res.data.bookings);
+        Modal.success({
+          title: 'Booking deleted successfully',
+        });
+        fetchBooking();
+      })
+      .catch(er => console.log(er));
+    handleDeleteModalClose();
+    handleUpdateModalClose();
+  };
+
+  const handleAddBooking = () => {
+    setUpdateModalVisible(true);
+  };
+
+  const handleCreateBooking = async (values: BookingData) => {
+    const formattedBookingData = {
+      ...values,
+      time_start: values.time_start!.format(),
+      time_end: values.time_end!.format(),
+    };
+
+    try {
+      const res = await axios.post(`${url}/v1/bookings`, formattedBookingData, {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setBookingData(res.data.booking);
+      setTimeout(() => {
+        Modal.success({
+          title: 'Booking created successfully',
+        });
+        Modal.destroyAll();
+      }, 3000);
+      fetchBooking();
+      handleEditModalClose();
+    } catch (error: any) {
+      setTimeout(() => {
+        Modal.error({
+          title: `${error.response.data.description}`,
+        });
+        Modal.destroyAll();
+      }, 3000);
+    }
+  };
+
+  const handleBookingClick = (
+    event: React.MouseEvent<HTMLDivElement>,
+    booking: BookingData
+  ) => {
+    event.stopPropagation();
+    setSelectedBooking(booking);
+    setModalVisible(true);
+  };
+
+  const dateCellRender = (value: Dayjs) => {
+    if (bookingData && bookingData.length > 0) {
+      const bookings = bookingData.filter(booking => {
+        const bookingDate = dayjs(booking.time_start)?.format('YYYY-MM-DD');
+        return bookingDate === value.format('YYYY-MM-DD');
+      });
+      return (
+        <>
+          {bookings.map(booking => (
+            <div
+              key={booking.booking_id}
+              style={{
+                width: '100%',
+                background: '#D6E4EC',
+                padding: '3px 3px 0 12px',
+                marginBottom: '3px',
+                borderRadius: '3px',
+                cursor: 'pointer',
+              }}
+              onClick={e => handleBookingClick(e, booking)}
+            >
+              {booking.title}
+            </div>
+          ))}
+        </>
+      );
+    }
+  };
+  const handleCloseShow = () => {
+    setModalVisible(false);
+    setSelectedBooking(null);
+    Modal.destroyAll();
+  };
   return (
     <div>
-      <Calendar
-        onSelect={handleDateSelect}
-        dateCellRender={(date) => {
-          const bookings = bookingData.filter((booking) =>
-            dayjs(booking.time_start).isSame(date, 'day')
-          );
-          return (
-            <div>
-              {bookings.map((booking) => (
-                <div
-                  key={booking.booking_id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => handleRoomSelect(booking.room_id)}
-                >
-                  <div
-                    style={{
-                      borderRadius: '3px',
-                      backgroundColor:
-                        booking.room_id !== null ? roomColors[booking.room_id - 1] : '',
-                      color: 'white',
-                      padding: '0px 10px',
-                      marginBottom: '5px',
-                    }}
-                  >
-                    <p>{booking.room_name}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        }}
-      />
+      <div>
+        <Button type='primary' onClick={handleAddBooking}>
+          Add Booking
+        </Button>
+      </div>
+      <div>
+        <Calendar
+          value={selectedDate}
+          onSelect={handleDateSelect}
+          dateCellRender={dateCellRender}
+        />
+      </div>
       <Modal
-        title={`Bookings for Room ${selectedRoom}`}
-        visible={visible}
-        onCancel={handleCloseModal}
-      footer={[
-          <Button key="cancel" onClick={handleCloseModal}>
-            Cancel
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            onClick={() => {
-              form.submit();
+        title={
+          <Title
+            level={2}
+            style={{
+              display: 'flex',
+              width: '100%',
+              justifyContent: 'center',
+              borderBottom: '4px solid #D6E4EC',
+              marginBottom: '15px',
+              paddingBottom: '10px',
             }}
           >
-            Book
+            Đặt phòng
+          </Title>
+        }
+        visible={updateModalVisible}
+        onCancel={handleUpdateModalClose}
+        footer={null}
+        bodyStyle={{
+          border: '1px solid #ccc',
+          borderRadius: '5px',
+          padding: '20px',
+        }}
+        destroyOnClose={true}
+        maskClosable={false}
+        afterClose={handleUpdateModalClose}
+      >
+        <Form form={form} onFinish={handleCreateBooking} preserve={false}>
+          <Form.Item name='room_id' label='Room'>
+            <Select placeholder='Select a room'>
+              {rooms?.map(room => (
+                <Select.Option key={room.room_id} value={room.room_id}>
+                  {room.room_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name='user_id' label='Employees'>
+            <Select
+              mode='multiple'
+              placeholder='Select employees'
+              optionLabelProp='label'
+            >
+              {employees.map(employee => (
+                <Select.Option
+                  key={employee.user_id}
+                  value={employee.user_id}
+                  label={employee.user_name}
+                >
+                  {employee.user_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name='time_start' label='Start Time'>
+            <DatePicker
+              showTime
+              format='YYYY-MM-DD HH:mm'
+              placeholder='Select start time'
+            />
+          </Form.Item>
+          <Form.Item name='time_end' label='End Time'>
+            <DatePicker
+              showTime
+              format='YYYY-MM-DD HH:mm'
+              placeholder='Select end time'
+            />
+          </Form.Item>
+          <Form.Item name="title" label="Title">
+              <Input type='text'/>
+          </Form.Item>
+          <Form.Item style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button type='primary' htmlType='submit'>
+              Create add
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: '4px solid #D6E4EC',
+              marginBottom: '10px',
+              paddingBottom: '15px',
+              padding: '10px',
+              borderRadius: '5px',
+            }}
+          >
+            <Typography.Title level={2} style={{ margin: 0 }}>
+              {selectedBooking?.title}  
+            </Typography.Title>
+          </div>
+        }
+        visible={modalVisible}
+        onCancel={handleCloseShow}
+        footer={
+          <div>
+            <Space
+              style={{
+                width: '100%',
+                justifyContent: 'flex-end',
+                columnGap: '5%',
+              }}
+            >
+              <Popover content='Edit Room'>
+                <Button onClick={handleEditModalOpen}>Edit</Button>
+              </Popover>
+              <Popover content='Delete Room'>
+                <Button danger onClick={handleDeleteModalOpen}>
+                  Delete
+                </Button>
+              </Popover>
+            </Space>
+          </div>
+        }
+        destroyOnClose={true}
+        maskClosable={false}
+        afterClose={handleCloseShow}
+        bodyStyle={{
+          border: '3px solid #ccc',
+          borderRadius: '5px',
+          padding: '20px',
+          boxShadow: '2px 2px 4px 0px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        {selectedBooking && (
+          <>
+            <Typography.Title level={4}>
+              Room: {selectedBooking.room_name}
+            </Typography.Title>
+            <Typography.Title level={4}>
+              <List
+                header={<div style={{marginBottom:'0px'}}>Người tham dự:</div>}
+                footer={null}
+                dataSource={selectedBooking.user_name}
+                renderItem={user => (
+                  <List.Item style={{ paddingBottom: '0' }}>
+                    <span style={{ marginRight: '8px' }}>•</span> {user}
+                  </List.Item>
+                )}
+                style={{
+                  padding:'1px'
+                }}
+              />
+            </Typography.Title>
+            <div style={{paddingBottom:'10px'}}>
+            <div style={{ marginTop: '20px', marginBottom:'10px' }}>
+              <Typography.Text strong>Ngày họp:</Typography.Text>{' '}
+              <Typography.Text>
+                {selectedBooking.time_start
+                  ? dayjs(selectedBooking.time_start).format('DD/MM/YYYY')
+                  : ''}
+              </Typography.Text>
+            </div>
+            <div style={{ marginTop: '10px' , marginBottom:'10px'}}>
+              <Typography.Text strong>Giờ bắt đầu:</Typography.Text>{' '}
+              <Typography.Text>
+                {selectedBooking.time_start
+                  ? dayjs(selectedBooking.time_start).format('HH:mm')
+                  : ''}
+              </Typography.Text>
+            </div>
+            <div style={{ marginTop: '10px', marginBottom:'10px' }}>
+              <Typography.Text strong>Giờ kết thúc:</Typography.Text>{' '}
+              <Typography.Text>
+                {selectedBooking.time_end
+                  ? dayjs(selectedBooking.time_end).format('HH:mm')
+                  : ''}
+              </Typography.Text>
+            </div>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      <Modal
+        title='Edit Room'
+        visible={editModalVisible}
+        onCancel={handleEditModalClose}
+        footer={[
+          <Button key='cancel' onClick={handleEditModalClose}>
+            Cancel
           </Button>,
         ]}
+        destroyOnClose={true}
+        maskClosable={false}
+        afterClose={handleEditModalClose}
       >
         <Form
           form={form}
-          name="booking_form"
-          onFinish={handleBookingSubmit}
+          onFinish={handleEditBooking}
+          initialValues={{
+            user_id: selectedBooking?.user_id,
+            time_start: dayjs(selectedBooking?.time_start),
+            time_end: dayjs(selectedBooking?.time_end),
+            title: selectedBooking?.title
+          }}
+          preserve={false}
         >
-          <Form.Item
-            name="time_start"
-            label="Start Time"
-            rules={[
-              {
-                required: true,
-                message: 'Please select a start time',
-              },
-            ]}
-          >
-            <DatePicker
-              showTime
-              format="YYYY-MM-DD HH:mm:ss"
-              disabledDate={(current) =>
-                current && current < dayjs().endOf('day')
-              }
-            />
-          </Form.Item>
-          <Form.Item
-            name="time_end"
-            label="End Time"
-            rules={[
-              {
-                required: true,
-                message: 'Please select an end time',
-              },
-            ]}
-          >
-            <DatePicker
-              showTime
-              format="YYYY-MM-DD HH:mm:ss"
-              disabledDate={(current) =>
-                current &&
-                (current < dayjs().endOf('day') ||
-                  current < form.getFieldValue('time_start'))
-              }
-            />
-          </Form.Item>
-          <Form.Item
-            name="employee_id"
-            label="Employee"
-            rules={[
-              {
-                required: true,
-                message: 'Please select at least one employee',
-              },
-            ]}
-          >
-            <Select mode="multiple">
-              <Select.Option value={1}>John</Select.Option>
-              <Select.Option value={2}>Jane</Select.Option>
-              <Select.Option value={3}>Jack</Select.Option>
-              <Select.Option value={4}>Ben</Select.Option>
-              <Select.Option value={5}>Tom</Select.Option>
-              <Select.Option value={6}>Jerry</Select.Option>
-              <Select.Option value={7}>Alice</Select.Option>
-              <Select.Option value={8}>Bob</Select.Option>
+          <Form.Item name='user_id' label='Employees'>
+            <Select
+              mode='multiple'
+              placeholder='Select employees'
+              optionLabelProp='label'
+            >
+              {employees.map(employee => (
+                <Select.Option
+                  key={employee.user_id}
+                  value={employee.user_id}
+                  label={employee.user_name}
+                >
+                  {employee.user_name}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
+          <Form.Item name='time_start' label='Start Time'>
+            <DatePicker
+              showTime
+              format='YYYY-MM-DD HH:mm'
+              placeholder='Select start time'
+            />
+          </Form.Item>
+          <Form.Item name='time_end' label='End Time'>
+            <DatePicker
+              showTime
+              format='YYYY-MM-DD HH:mm'
+              placeholder='Select end time'
+            />
+          </Form.Item>
+          <Form.Item name='title' label='Title'>
+                <Input type='text' />
+          </Form.Item>
+          <Form.Item style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button type='primary' htmlType='submit'>
+              Update
+            </Button>
+          </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title='Delete Booking'
+        visible={deleteModalVisible}
+        onCancel={handleDeleteModalClose}
+        footer={[
+          <Button key='cancel' onClick={handleDeleteModalClose}>
+            Cancel
+          </Button>,
+          <Button
+            key='delete'
+            type='primary'
+            danger
+            onClick={() => handleDeleteBooking(selectedBooking?.booking_id!)}
+          >
+            Delete
+          </Button>,
+        ]}
+        destroyOnClose={true}
+        maskClosable={false}
+        afterClose={handleDeleteModalClose}
+      >
+        <p>Are you sure you want to delete this booking?</p>
       </Modal>
     </div>
   );
 };
 
-export default MeetingCalendar;
-
-
-
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import { Calendar, Modal, Form, Select, Button, DatePicker, Spin } from 'antd';
-// import dayjs, { Dayjs } from 'dayjs';
-// import axios from 'axios';
-
-// interface BookingData {
-//   booking_id: number | null;
-//   time_start: Dayjs | null;
-//   time_end: Dayjs | null;
-//   employee_id: number[];
-//   room_id: number | null;
-//   room_name: string;
-//   employee_name: string[];
-// }
-
-// const roomColors: string[] = [
-//   '#5082FF',   // Short duration
-//   '#80C1FF',
-//   '#B3E0FF',
-//   '#FF6B6B',   // Medium duration
-//   '#FF9E9E',
-//   '#FFCCCC',
-//   '#FFC154',   // Long duration
-//   '#FFD390',
-//   '#FFEAC7',
-// ];
-
-// const MeetingCalendar: React.FC = () => {
-//   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
-//   const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
-//   const [visible, setVisible] = useState(false);
-//   const [modalContent, setModalContent] = useState<BookingData[]>([]);
-//   const [loading, setLoading] = useState(false);
-//   const [form] = Form.useForm();
-
-//   useEffect(() => {
-//     if (selectedDate && selectedRoom) {
-//       fetchBookings(selectedDate, selectedRoom);
-//     }
-//   }, [selectedDate, selectedRoom]);
-
-//   const fetchBookings = async (date: Dayjs, roomId: number) => {
-//     try {
-//       setLoading(true);
-//       const response = await axios.get<BookingData[]>(`your_backend_api_url?date=${date.format('YYYY-MM-DD')}&roomId=${roomId}`);
-//       setModalContent(response.data);
-//       setVisible(true);
-//     } catch (error) {
-//       console.error('Error fetching bookings:', error);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleDateSelect = (date: Dayjs | null) => {
-//     setSelectedDate(date);
-//     setSelectedRoom(null);
-//   };
-
-//   const handleRoomSelect = (roomId: number | null) => {
-//     setSelectedRoom(roomId);
-//   };
-
-//   const handleCloseModal = () => {
-//     setVisible(false);
-//   };
-
-//   const handleBookingSubmit = async (values: any) => {
-//     const { employee_id, time_start, time_end } = values;
-//     const newBooking: BookingData = {
-//       booking_id: null,
-//       time_start: dayjs(time_start),
-//       time_end: dayjs(time_end),
-//       employee_id,
-//       room_id: selectedRoom,
-//       room_name: '',
-//       employee_name: [],
-//     };
-
-//     try {
-//       const response = await axios.post<BookingData>('your_backend_api_url', newBooking);
-//       const createdBooking = response.data;
-//       setModalContent((prevContent) => [...prevContent, createdBooking]);
-//       form.resetFields();
-//       setVisible(false);
-//     } catch (error) {
-//       console.error('Error creating booking:', error);
-//     }
-//   };
-
-//   return (
-//     <div>
-//       {loading ? (
-//         <Spin size='large' />
-//       ) : (
-//         <Calendar
-//           onSelect={handleDateSelect}
-//           dateCellRender={(date) => {
-//             const bookings = modalContent.filter((booking) =>
-//               dayjs(booking.time_start).isSame(date, 'day')
-//             );
-//             return (
-//               <div>
-//                 {bookings.map((booking) => {
-//                   const durationHours = dayjs(booking.time_end).diff(booking.time_start, 'hour');
-//                   let color = roomColors[0]; // Default color for short duration
-//                   if (durationHours >= 4 && durationHours < 8) {
-//                     color = roomColors[3]; 
-//                   } else if (durationHours >= 8) {
-//                     color = roomColors[6]; 
-//                   }
-//                   return (
-//                     <div
-//                       key={booking.booking_id}
-//                       style={{ cursor: 'pointer' }}
-//                       onClick={() => handleRoomSelect(booking.room_id)}
-//                     >
-//                       <div
-//                         style={{
-//                           borderRadius: '3px',
-//                           backgroundColor: color,
-//                           color: 'white',
-//                           padding: '0px 10px',
-//                           marginBottom: '5px',
-//                         }}
-//                       >
-//                         <p>{booking.room_name}</p>
-//                       </div>
-//                     </div>
-//                   );
-//                 })}
-//               </div>
-//             );
-//           }}
-//         />
-//       )}
-//       <Modal
-//         title={`Bookings for Room ${selectedRoom}`}
-//         visible={visible}
-//         onCancel={handleCloseModal}
-//         footer={[
-//           <Button key="cancel" onClick={handleCloseModal}>
-//             Cancel
-//           </Button>,
-//           <Button
-//             key="submit"
-//             type="primary"
-//             onClick={() => {
-//               form.submit();
-//             }}
-//             disabled={loading}
-//           >
-//             Book
-//           </Button>,
-//         ]}
-//       >
-//         <Form form={form} name="booking_form" onFinish={handleBookingSubmit}>
-//           <Form.Item
-//             name="time_start"
-//             label="Start Time"
-//             rules={[
-//               {
-//                 required: true,
-//                 message: 'Please select a start time',
-//               },
-//             ]}
-//           >
-//             <DatePicker showTime format="YYYY-MM-DD HH:mm" />
-//           </Form.Item>
-//           <Form.Item
-//             name="time_end"
-//             label="End Time"
-//             rules={[
-//               {
-//                 required: true,
-//                 message: 'Please select an end time',
-//               },
-//             ]}
-//           >
-//             <DatePicker showTime format="YYYY-MM-DD HH:mm" />
-//           </Form.Item>
-//           <Form.Item
-//             name="employee_id"
-//             label="Employee"
-//             rules={[
-//               {
-//                 required: true,
-//                 message: 'Please select an employee',
-//               },
-//             ]}
-//           >
-//             <Select mode="multiple">
-//               {/* Render employee options */}
-//             </Select>
-//           </Form.Item>
-//         </Form>
-//       </Modal>
-//     </div>
-//   );
-// };
-
-// export default MeetingCalendar;
+export default BookingCalendar;
