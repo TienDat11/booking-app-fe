@@ -14,15 +14,21 @@ import {
 } from '@ant-design/icons';
 import { Layout, Menu, Button, Space, Avatar, Dropdown, MenuProps, Typography } from 'antd';
 import { Header } from 'antd/es/layout/layout';
+import Cookies from 'js-cookie';
+import getCookie from '../route/Cookie';
 const { Sider, Content } = Layout;
 const LayoutApp = () => {
+    const role = getCookie('roles')
+    const name = Cookies.get('name')
     const [collapsed, setCollapsed] = useState(false);
     const navigator = useNavigate()
 
-
     // Logout
     const handleLogout = () => {
-        localStorage.clear();
+        const cookies = Cookies.get()
+        for(const cookie in cookies){
+            Cookies.remove(cookie);
+        }
         navigator('/login');
     };
     const items: MenuProps['items'] = [
@@ -34,13 +40,78 @@ const LayoutApp = () => {
         },
         {
             // label: "Logout",
-            label: <a target="_blank">Logout</a>,
+            label: <a target="_blank" onClick={handleLogout}>Logout</a>,
             icon: <LogoutOutlined />,
             key: '1',
         },
 
 
     ];
+
+    const nameWeb = (role.includes('admin'))? (<h1 >WEBSITE BOOKING</h1>): (<h1>Calendar Meeting</h1>)
+    const siderbar = (role.includes('admin'))? (
+        <Sider
+                    style={{ marginTop:13}}
+                    trigger={null}
+                    collapsible
+                    collapsed={collapsed}
+                    theme='light'
+                    width={'200px'}
+                >
+                    <div className="demo-logo-vertical" />
+                    <Button
+                        type="text"
+                        onClick={() => setCollapsed(!collapsed)}
+                        style={{
+                            width: 70,
+                            height: 64,
+                            display: 'flex',
+                            justifyContent: 'center'
+                            
+                        }}
+                    />
+                    <Menu className='menu'
+                        onClick={({ key }) => {
+                            if (key === 'logout') {
+                                handleLogout();
+                            } else {
+                                  navigator(key);
+                            }
+                        }}
+                        theme='light'
+                        mode="inline"
+                        defaultSelectedKeys={['/dashboard']}
+                        items={[
+                            {
+                                key: '/dashboard',
+                                icon: <AppstoreOutlined />,
+                                label: 'Dashboard',
+                            
+
+
+                            },
+                            {
+                                key: '/roomanager',
+                                icon: <HomeOutlined />,
+
+                                label: 'Room Manager'
+                            },
+                            {
+                                key: '/usermanager',
+                                icon: <UserOutlined />,
+                                label: 'User Manager',
+
+                            },
+                            {
+                                key: '/bookingmanagement',
+                                icon: <SelectOutlined />,
+                                label: 'Booking Management',
+                            },
+
+                        ]}
+                    />
+                </Sider>
+    ):(null)
 
     return (
 
@@ -55,11 +126,12 @@ const LayoutApp = () => {
                     display: 'flex',
                     alignItems: 'center',
                     background: 'white',
-                    justifyContent: 'end'
+                    justifyContent: 'space-between'
 
                 }}
             >
-                <Typography.Title style={{ marginRight: 320 }}>WEBSITE BOOKING</Typography.Title>
+
+                {nameWeb}
                 <Dropdown menu={{ items }} trigger={['click']} arrow >
                     <Button
                         style={{
@@ -75,7 +147,7 @@ const LayoutApp = () => {
                         <a onClick={(e) => e.preventDefault()}>
                             <Space style={{ columnGap: 30 }}>
                                 <Avatar style={{ marginLeft: 0 }} src="https://xsgames.co/randomusers/avatar.php?g=pixel&key=1" />
-                                <p>name user</p>
+                                {name}
                                 <DownOutlined style={{}} />
                             </Space>
                         </a>
@@ -84,70 +156,7 @@ const LayoutApp = () => {
 
             </Header>
             <Layout>
-                <Sider
-                    style={{ marginTop:13}}
-                    trigger={null}
-                    collapsible
-                    collapsed={collapsed}
-                    theme='light'
-                    width={'200px'}
-                >
-                    <div className="demo-logo-vertical" />
-                    <Button
-                        type="text"
-                        
-                        // icon={collapsed ? <MenuFoldOutlined  /> : <MenuUnfoldOutlined/>}
-                        onClick={() => setCollapsed(!collapsed)}
-                        style={{
-                            // fontSize: '16px',
-                            width: 70,
-                            height: 64,
-                            display: 'flex',
-                            justifyContent: 'center'
-                            // color: 'white',
-                            // marginLeft: 9,
-                        }}
-                    />
-                    <Menu className='menu'
-                        onClick={({ key }) => {
-                            if (key === 'logout') {
-                                handleLogout();
-                            } else {
-                                //   navigator(key);
-                            }
-                        }}
-                        theme='light'
-                        mode="inline"
-                        defaultSelectedKeys={['/dashboard']}
-                        items={[
-                            {
-                                key: '/dashboard',
-                                icon: <AppstoreOutlined />,
-                                label: 'Dashboard',
-
-
-                            },
-                            {
-                                key: '/roomanager',
-                                icon: <HomeOutlined />,
-
-                                label: 'Room Manager'
-                            },
-                            {
-                                key: '/employeesmanager',
-                                icon: <UserOutlined />,
-                                label: 'Employees Manager',
-
-                            },
-                            {
-                                key: '/bookingmanagement',
-                                icon: <SelectOutlined />,
-                                label: 'Booking Management',
-                            },
-
-                        ]}
-                    />
-                </Sider>
+                {siderbar}
                 <Content
                     style={{
                         margin: 13,
@@ -165,3 +174,4 @@ const LayoutApp = () => {
 };
 
 export default LayoutApp;
+
