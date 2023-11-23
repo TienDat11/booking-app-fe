@@ -1,5 +1,5 @@
 import { CheckCircleOutlined, HomeOutlined, UserOutlined } from '@ant-design/icons';
-import { Card, Col, List, Space, Statistic } from 'antd';
+import { Card, Space, Statistic, Spin } from 'antd';
 import Table, { ColumnsType } from 'antd/es/table';
 import axios from 'axios';
 import { Link } from 'react-router-dom'
@@ -8,7 +8,7 @@ import './dashboard.css'
 import getCookie from '../route/Cookie';
 const Dashboard = () => {
   const token = getCookie('token');
-  const url = 'https://c1a4-210-245-110-144.ngrok-free.app/'
+  const url = 'https://6158-210-245-110-144.ngrok-free.app'
   interface DataUserType {
     user_name: string,
     phone_number: string,
@@ -35,11 +35,13 @@ const Dashboard = () => {
   const [totalBooking, setTotalBooking] = useState<number>()
   const [list_room, setListRoom] = useState([] as DataRoomType[])
   const [totalRoom, setTotalRoom] = useState<number>()
-  const [dataChart, setDataChart] = useState<DataChart>()
+  const [loading, setLoading] = useState<boolean>(true);
+  
 
   const getData = async () => {
+    setLoading(true);
     try {
-      await axios.get(url + "v1/bookings", {
+      await axios.get(url + "/v1/bookings", {
         withCredentials: true,
         headers: {
           Authorization: `Bearer ${token}`,
@@ -48,7 +50,7 @@ const Dashboard = () => {
         setListBooking(res.data.bookings)
         setTotalBooking(res.data.total_items)
       })
-      await axios.get(url + "v1/users", {
+      await axios.get(url + "/v1/users", {
         withCredentials: true,
         headers: {
           Authorization: `Bearer ${token}`,
@@ -57,7 +59,7 @@ const Dashboard = () => {
         setListusers(res.data.list_users)
         setTotalUser(res.data.total_items)
       })
-      await axios.get(url + "v1/rooms", {
+      await axios.get(url + "/v1/rooms", {
         withCredentials: true,
         headers: {
           Authorization: `Bearer ${token}`,
@@ -67,7 +69,8 @@ const Dashboard = () => {
         setTotalRoom(res.data.total_items)
       })
     } catch (error) {
-      console.error(error);
+    } finally{
+      setLoading(false);
     }
   }
   useEffect(() => {
@@ -98,71 +101,85 @@ const Dashboard = () => {
   ];
 
   return (
-    <div>
-      <Space style={{marginBottom: 20}} >
-      <Space direction='horizontal' >
-          <Link to={'/bookingmanager'}>
-          <Card hoverable style={{ width: 370, background: '#ebe1f6' }}>
-            <Space direction='horizontal' >
-              <CheckCircleOutlined style={{
-                color: "blue",
-                backgroundColor: "rgba(0,0,255,0.25)",
-                borderRadius: 20,
-                fontSize: 24,
-                padding: 8,
-                marginRight: 50
-
-              }} />
-              <Statistic title='Booking' value={totalBooking} />
-            </Space>
-          </Card>
-          
-          </Link>
-        </Space>
+    <div >
+      {loading ? (
+        <Spin
+        size="large"
+        tip="Loading..."
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontSize: '24px',
+          color: '#ff0000'
+        }}
+      />
+      ) : (
+        <>
+        
+        <Space style={{marginBottom: 20}} >
         <Space direction='horizontal' >
-          <Link to={'/usermanager'} >
-          <Card hoverable style={{ width: 370, background: 'pink' }}>
-            <Space direction='horizontal' >
-              <UserOutlined style={{
-                color: "purple",
-                backgroundColor: "rgba(0,255,255,0.25)",
-                borderRadius: 20,
-                fontSize: 24,
-                padding: 8,
-                marginRight: 50
-              }} />
-              <Statistic title='User' value={totalUser} />
-            </Space>
-          </Card>
-          </Link>
+            <Link to={'/bookingmanager'}>
+            <Card hoverable style={{ width: 370, background: '#ebe1f6' }}>
+              <Space direction='horizontal' className='card-total'>
+                <CheckCircleOutlined style={{
+                  color: "blue",
+                  backgroundColor: "rgba(0,0,255,0.25)",
+                  borderRadius: 20,
+                  fontSize: 24,
+                  padding: 8,
+                  marginRight: 50
+  
+                }} />
+                <Statistic className='total-detail' title='Booking' value={totalBooking} />
+              </Space>
+            </Card>
+            
+            </Link>
+          </Space>
+          <Space direction='horizontal' >
+            <Link to={'/usermanager'} >
+            <Card hoverable style={{ width: 370, background: 'pink' }}>
+              <Space direction='horizontal' className='card-total' >
+                <UserOutlined style={{
+                  color: "purple",
+                  backgroundColor: "rgba(0,255,255,0.25)",
+                  borderRadius: 20,
+                  fontSize: 24,
+                  padding: 8,
+                  marginRight: 50
+                }} />
+                <Statistic className='total-detail'  title='User' value={totalUser} />
+              </Space>
+            </Card>
+            </Link>
+          </Space>
+          <Space direction='horizontal' >
+            <Link to={'/roomnanager'}>
+            <Card hoverable style={{ width: 370, background: '#f7dce2' }}>
+              <Space direction='horizontal' className='card-total'>
+                <HomeOutlined style={{
+                  color: "red",
+                  backgroundColor: "rgba(255,0,0,0.25)",
+                  borderRadius: 20,
+                  fontSize: 24,
+                  padding: 8,
+                  marginRight: 50
+  
+                }} />
+                <Statistic className='total-detail' title='Rooms' value={totalRoom} />
+              </Space>
+            </Card>
+            </Link>
+          </Space>
         </Space>
-        <Space direction='horizontal' >
-          <Link to={'/roomnanager'}>
-          <Card hoverable style={{ width: 370, background: '#f7dce2' }}>
-            <Space direction='horizontal' >
-              <HomeOutlined style={{
-                color: "red",
-                backgroundColor: "rgba(255,0,0,0.25)",
-                borderRadius: 20,
-                fontSize: 24,
-                padding: 8,
-                marginRight: 50
-
-              }} />
-              <Statistic title='Rooms' value={totalRoom} />
-            </Space>
-          </Card>
-          </Link>
-        </Space>
-      </Space>
-
-      <Table style={{ width: 600 }} dataSource={list_users} columns={columns} pagination={{ pageSize: 5, position: ['bottomCenter'] }} />
-
-
+  
+        <Table style={{ width: 700, position:'relative',top:'50%',left:'22%' }} dataSource={list_users} columns={columns} pagination={{ pageSize: 5, position: ['bottomCenter'] }} />
+        </>
+      )}
+      </div>
              
-
-
-    </div>
   )
 }
 

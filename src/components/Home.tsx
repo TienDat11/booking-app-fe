@@ -5,13 +5,14 @@ import {
   Button,
   Form,
   Input,
-  Checkbox,
+  Spin,
   DatePicker,
   Select,
   List,
   Typography,
   Space,
   Popover,
+  Alert,
 } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import axios from 'axios';
@@ -20,7 +21,7 @@ import getCookie from './route/Cookie';
 const { Title } = Typography;
 
 interface BookingData {
-  title: string,
+  title: string;
   booking_id: number | null;
   time_start: Dayjs | null;
   time_end: Dayjs | null;
@@ -57,12 +58,18 @@ const BookingCalendar = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [bookingData, setBookingData] = useState<BookingData[]>([]);
   const [employees, setEmployees] = useState([] as DataType[]);
+  const [error, setError] = useState<string>('');
+  const [errorVisible, setErrorVisible] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [success, setSuccess] = useState<string>('');
+  const [successVisible, setSuccessVisible] = useState<boolean>(false);
   const [form] = Form.useForm();
   const modalRoot = document.createElement('div');
   document.body.appendChild(modalRoot);
-  const url = 'https://c1a4-210-245-110-144.ngrok-free.app';
+  const url = 'https://6158-210-245-110-144.ngrok-free.app';
   const token = getCookie('token');
-
+  const roles: string = getCookie('roles');
+  const checkAdmin: boolean = roles.includes('admin');
   const fetchEmployees = async () => {
     try {
       const res = await axios.get(url + '/v1/users', {
@@ -74,7 +81,11 @@ const BookingCalendar = () => {
       });
       setEmployees(res.data.list_users);
     } catch (error: any) {
-      console.log(error.response.data.error);
+      setError(error.response.data.description);
+      setErrorVisible(true);
+      setTimeout(() => {
+        setErrorVisible(false);
+      }, 3000);
     }
   };
   const fetchRooms = async () => {
@@ -96,10 +107,15 @@ const BookingCalendar = () => {
       });
       setRooms(response.data.rooms);
     } catch (error: any | null) {
-      console.log(error);
+      setError(error.response.data.description);
+      setErrorVisible(true);
+      setTimeout(() => {
+        setErrorVisible(false);
+      }, 3000);
     }
   };
   const fetchBooking = async () => {
+    setLoading(true);
     try {
       const res = await axios.get(url + '/v1/bookings', {
         withCredentials: true,
@@ -110,9 +126,14 @@ const BookingCalendar = () => {
       });
       setBookingData(res.data.bookings);
       console.log(res.data.bookings);
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      setError(error.response.data.description);
+      setErrorVisible(true);
+      setTimeout(() => {
+        setErrorVisible(false);
+      }, 3000);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -175,35 +196,49 @@ const BookingCalendar = () => {
 
       setBookingData(res.data.booking);
       handleEditModalClose();
+      handleCloseShow();
+      setSuccess('Update Success');
+      setSuccessVisible(true);
       setTimeout(() => {
-        Modal.success({
-          title: `Booking Updated Success`,
-        });
-        Modal.destroyAll();
+        setSuccessVisible(false);
       }, 3000);
       fetchBooking();
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      setError(error.response.data.description);
+      setErrorVisible(true);
+      setTimeout(() => {
+        setErrorVisible(false);
+      }, 3000);
     }
   };
 
   const handleDeleteBooking = (id: number) => {
-    axios
-      .delete(url + '/v1/bookings/' + id, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(res => {
-        setBookingData(res.data.bookings);
-        Modal.success({
-          title: 'Booking deleted successfully',
+    try {
+      axios
+        .delete(url + '/v1/bookings/' + id, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then(res => {
+          setBookingData(res.data.bookings);
+          setSuccess('Delete Success');
+          setSuccessVisible(true);
+          setTimeout(() => {
+            setSuccessVisible(false);
+          }, 3000);
+          fetchBooking();
         });
-        fetchBooking();
-      })
-      .catch(er => console.log(er));
-    handleDeleteModalClose();
-    handleUpdateModalClose();
+
+      handleDeleteModalClose();
+      handleCloseShow();
+    } catch (error: any) {
+      setError(error.response.data.description);
+      setErrorVisible(true);
+      setTimeout(() => {
+        setErrorVisible(false);
+      }, 3000);
+    }
   };
 
   const handleAddBooking = () => {
@@ -226,20 +261,19 @@ const BookingCalendar = () => {
       });
 
       setBookingData(res.data.booking);
+
+      setSuccess('Add Success');
+      setSuccessVisible(true);
+      handleUpdateModalClose();
       setTimeout(() => {
-        Modal.success({
-          title: 'Booking created successfully',
-        });
-        Modal.destroyAll();
+        setSuccessVisible(false);
       }, 3000);
       fetchBooking();
-      handleEditModalClose();
     } catch (error: any) {
+      setError(error.response.data.description);
+      setErrorVisible(true);
       setTimeout(() => {
-        Modal.error({
-          title: `${error.response.data.description}`,
-        });
-        Modal.destroyAll();
+        setErrorVisible(false);
       }, 3000);
     }
   };
@@ -288,33 +322,58 @@ const BookingCalendar = () => {
   };
   return (
     <div>
-      <div>
-        <Button type='primary' onClick={handleAddBooking}>
-          Add Booking
-        </Button>
-      </div>
-      <div>
-        <Calendar
-          value={selectedDate}
-          onSelect={handleDateSelect}
-          dateCellRender={dateCellRender}
+      {loading ? (
+        <Spin
+          size='large'
+          tip='Loading...'
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            fontSize: '24px',
+            color: '#ff0000',
+          }}
         />
-      </div>
+      ) : (
+        <>
+          <div>
+            {checkAdmin ? (
+            <Button type='primary' onClick={handleAddBooking}>
+              Add Booking
+            </Button>
+            ): null}
+          </div>
+          <div>
+            {successVisible && <Alert type='success' message={success} />}
+          </div>
+          <div>
+            <Calendar
+              value={selectedDate}
+              onSelect={handleDateSelect}
+              dateCellRender={dateCellRender}
+            />
+          </div>
+        </>
+      )}
       <Modal
         title={
-          <Title
-            level={2}
-            style={{
-              display: 'flex',
-              width: '100%',
-              justifyContent: 'center',
-              borderBottom: '4px solid #D6E4EC',
-              marginBottom: '15px',
-              paddingBottom: '10px',
-            }}
-          >
-            Đặt phòng
-          </Title>
+            <div>
+              <Title
+                level={2}
+                style={{
+                  display: 'flex',
+                  width: '100%',
+                  justifyContent: 'center',
+                  borderBottom: '4px solid #D6E4EC',
+                  marginBottom: '15px',
+                  paddingBottom: '10px',
+                }}
+              >
+                Add Booking
+              </Title>
+              {errorVisible && <Alert type='error' message={error} />}
+            </div>
         }
         visible={updateModalVisible}
         onCancel={handleUpdateModalClose}
@@ -369,8 +428,8 @@ const BookingCalendar = () => {
               placeholder='Select end time'
             />
           </Form.Item>
-          <Form.Item name="title" label="Title">
-              <Input type='text'/>
+          <Form.Item name='title' label='Title'>
+            <Input type='text' />
           </Form.Item>
           <Form.Item style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button type='primary' htmlType='submit'>
@@ -385,6 +444,7 @@ const BookingCalendar = () => {
           <div
             style={{
               display: 'flex',
+              width: '100%',
               alignItems: 'center',
               justifyContent: 'space-between',
               borderBottom: '4px solid #D6E4EC',
@@ -395,31 +455,34 @@ const BookingCalendar = () => {
             }}
           >
             <Typography.Title level={2} style={{ margin: 0 }}>
-              {selectedBooking?.title}  
+              {selectedBooking?.title}
             </Typography.Title>
+            {errorVisible && <Alert type='error' message={error} />}
           </div>
         }
         visible={modalVisible}
         onCancel={handleCloseShow}
         footer={
-          <div>
-            <Space
-              style={{
-                width: '100%',
-                justifyContent: 'flex-end',
-                columnGap: '5%',
-              }}
-            >
-              <Popover content='Edit Room'>
-                <Button onClick={handleEditModalOpen}>Edit</Button>
-              </Popover>
-              <Popover content='Delete Room'>
-                <Button danger onClick={handleDeleteModalOpen}>
-                  Delete
-                </Button>
-              </Popover>
-            </Space>
-          </div>
+          checkAdmin ? (
+            <div>
+              <Space
+                style={{
+                  width: '100%',
+                  justifyContent: 'flex-end',
+                  columnGap: '5%',
+                }}
+              >
+                <Popover content='Edit Room'>
+                  <Button onClick={handleEditModalOpen}>Edit</Button>
+                </Popover>
+                <Popover content='Delete Room'>
+                  <Button danger onClick={handleDeleteModalOpen}>
+                    Delete
+                  </Button>
+                </Popover>
+              </Space>
+            </div>
+          ) : null
         }
         destroyOnClose={true}
         maskClosable={false}
@@ -433,63 +496,83 @@ const BookingCalendar = () => {
       >
         {selectedBooking && (
           <>
-            <Typography.Title level={4}>
-              Room: {selectedBooking.room_name}
-            </Typography.Title>
-            <Typography.Title level={4}>
-              <List
-                header={<div style={{marginBottom:'0px'}}>Người tham dự:</div>}
-                footer={null}
-                dataSource={selectedBooking.user_name}
-                renderItem={user => (
-                  <List.Item style={{ paddingBottom: '0' }}>
-                    <span style={{ marginRight: '8px' }}>•</span> {user}
-                  </List.Item>
-                )}
-                style={{
-                  padding:'1px'
-                }}
-              />
-            </Typography.Title>
-            <div style={{paddingBottom:'10px'}}>
-            <div style={{ marginTop: '20px', marginBottom:'10px' }}>
-              <Typography.Text strong>Ngày họp:</Typography.Text>{' '}
-              <Typography.Text>
-                {selectedBooking.time_start
-                  ? dayjs(selectedBooking.time_start).format('DD/MM/YYYY')
-                  : ''}
-              </Typography.Text>
+            <div style={{ marginBottom: '10px', marginTop: '-25px' }}>
+              <Typography.Title level={4}>
+                Room: {selectedBooking.room_name}
+              </Typography.Title>
             </div>
-            <div style={{ marginTop: '10px' , marginBottom:'10px'}}>
-              <Typography.Text strong>Giờ bắt đầu:</Typography.Text>{' '}
-              <Typography.Text>
-                {selectedBooking.time_start
-                  ? dayjs(selectedBooking.time_start).format('HH:mm')
-                  : ''}
-              </Typography.Text>
+            <div style={{ marginBottom: '10px' }}>
+              <Typography.Title level={4}>
+                <div style={{ marginBottom: '0px' }}>Người tham dự:</div>
+                <List
+                  footer={null}
+                  dataSource={selectedBooking.user_name}
+                  renderItem={user => (
+                    <List.Item style={{ paddingBottom: '0' }}>
+                      <span style={{ marginRight: '8px' }}>•</span> {user}
+                    </List.Item>
+                  )}
+                  style={{ padding: '1px' }}
+                />
+              </Typography.Title>
             </div>
-            <div style={{ marginTop: '10px', marginBottom:'10px' }}>
-              <Typography.Text strong>Giờ kết thúc:</Typography.Text>{' '}
-              <Typography.Text>
-                {selectedBooking.time_end
-                  ? dayjs(selectedBooking.time_end).format('HH:mm')
-                  : ''}
-              </Typography.Text>
-            </div>
+            <div style={{ paddingBottom: '10px' }}>
+              <div style={{ marginTop: '20px', marginBottom: '10px' }}>
+                <Typography.Text strong>Ngày họp:</Typography.Text>{' '}
+                <Typography.Text>
+                  {selectedBooking.time_start
+                    ? dayjs(selectedBooking.time_start).format('DD/MM/YYYY')
+                    : ''}
+                </Typography.Text>
+              </div>
+              <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+                <Typography.Text strong>Giờ bắt đầu:</Typography.Text>{' '}
+                <Typography.Text>
+                  {selectedBooking.time_start
+                    ? dayjs(selectedBooking.time_start).format('HH:mm')
+                    : ''}
+                </Typography.Text>
+              </div>
+              <div style={{ marginTop: '10px', marginBottom: '10px' }}>
+                <Typography.Text strong>Giờ kết thúc:</Typography.Text>{' '}
+                <Typography.Text>
+                  {selectedBooking.time_end
+                    ? dayjs(selectedBooking.time_end).format('HH:mm')
+                    : ''}
+                </Typography.Text>
+              </div>
             </div>
           </>
         )}
       </Modal>
 
       <Modal
-        title='Edit Room'
+        title={
+          <div>
+            <Title
+              level={2}
+              style={{
+                width: '100%',
+                textAlign:'center',
+                borderBottom: '4px solid #D6E4EC',
+                marginBottom: '15px',
+                paddingBottom: '10px',
+              }}
+            >
+              Edit Booking
+            </Title>
+            {errorVisible && <Alert type='error' message={error} />}
+          </div>
+        }
         visible={editModalVisible}
         onCancel={handleEditModalClose}
-        footer={[
-          <Button key='cancel' onClick={handleEditModalClose}>
-            Cancel
-          </Button>,
-        ]}
+        bodyStyle={{
+          border: '1px solid #ccc',
+          borderRadius: '5px',
+          boxShadow: '2px 2px 4px 0px rgba(0, 0, 0, 0.3)',
+          padding: '20px',
+        }}
+        footer={[null]}
         destroyOnClose={true}
         maskClosable={false}
         afterClose={handleEditModalClose}
@@ -501,7 +584,7 @@ const BookingCalendar = () => {
             user_id: selectedBooking?.user_id,
             time_start: dayjs(selectedBooking?.time_start),
             time_end: dayjs(selectedBooking?.time_end),
-            title: selectedBooking?.title
+            title: selectedBooking?.title,
           }}
           preserve={false}
         >
@@ -537,9 +620,12 @@ const BookingCalendar = () => {
             />
           </Form.Item>
           <Form.Item name='title' label='Title'>
-                <Input type='text' />
+            <Input type='text' />
           </Form.Item>
           <Form.Item style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button key='cancel' style={{marginRight:'10px'}} onClick={handleEditModalClose}>
+              Cancel
+            </Button>
             <Button type='primary' htmlType='submit'>
               Update
             </Button>

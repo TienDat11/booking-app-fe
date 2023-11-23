@@ -1,12 +1,11 @@
 import { Outlet } from 'react-router-dom'
-import FormLogin from '../Form';
 import getCookie from './Cookie';
-
+import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = () => {
   const token = getCookie('token');
   return (
-    (token !== null) ? <Outlet/> : <FormLogin/>
+    (token) ? <Outlet/> : <Navigate to = "/login"/>
   )
 }
 

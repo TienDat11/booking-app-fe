@@ -6,6 +6,8 @@ const getCookie = (str: string) => {
       return JSON.parse(Cookies.get('roles') || '[]');
     case 'token':
       return Cookies.get('token');
+    case 'name':
+      return Cookies.get('name');
     default:
       console.log('Not Found');
       break;
