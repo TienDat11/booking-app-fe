@@ -10,7 +10,7 @@ const UnauthorizedPage: React.FC = () => {
       subTitle="Bạn không có quyền truy cập vào trang này."
       extra={
         <Button type="primary">
-          <Link to="/login">Trở về Trang chủ để đăng nhập</Link>
+          <Link to="/login">Trở về đăng nhập</Link>
         </Button>
       }
     />

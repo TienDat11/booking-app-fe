@@ -5,21 +5,17 @@ import axios from 'axios';
 import confirm from './Confirm';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
+import getCookie from './route/Cookie';
 
 
 const { Title, Text } = Typography;
 
-const url: string = 'https://c1a4-210-245-110-144.ngrok-free.app';
+const url: string = 'https://6158-210-245-110-144.ngrok-free.app';
 const FormLogin: React.FC = () => {
   const Navigate = useNavigate();
   const [form] = Form.useForm();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState<boolean>(false);
-  const handleOk = () => {
-    Modal.destroyAll();
-     Navigate('/');
-  };
-
   const handleClose = () => {
     Modal.destroyAll();
     Navigate('/login')
@@ -39,13 +35,19 @@ const FormLogin: React.FC = () => {
       .then(res => {
         const token: string = res.data.access_token;
         const roles: string[] = res.data.role_name;
-        Cookies.set('roles', JSON.stringify(roles), { expires: 7 });
-        Cookies.set('token', token, { expires: 7 });
-        confirm('Đăng nhập thành công', token !== undefined, handleOk);
+        const name: string = res.data.user_name;
+        Cookies.set('roles', JSON.stringify(roles));
+        Cookies.set('token', token);
+        Cookies.set('name', name);
+        if(roles.includes('admin')){
+          Navigate('/');
+        }else{
+          Navigate('/bookingmanagement');
+        }
       })
       .catch(error => {
         const errorMessage =
-          error.response?.data?.message || 'Có 1 lỗi xảy ra từ server';
+          error.response?.data?.description || 'Có 1 lỗi xảy ra từ server';
         handleError(errorMessage);
       });
 
