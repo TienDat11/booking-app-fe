@@ -8,28 +8,25 @@ import BookingCalendar from './components/Home';
 import Rooms from './components/room/Room';
 import UsersManager from './components/UserManager/UserManager';
 import Dashboard from './components/dashboard/dashboard';
-
+import RoomDetails from './components/room/RoomDetails';
 
 function App() {
-  
   return (
     <div className='App'>
-        <Routes>
-          <Route path='/login' element={<FormLogin />} />
-          <Route element={<ProtectedRoute />}>
-            <Route path='/' element={<LayoutApp />}>
-              <Route
-                path='/bookingmanagement'
-                element={<BookingCalendar />}
-              />
-              <Route element={<PrivateRoute />}>
-                <Route path='/roomManager' element={<Rooms />} />
-                <Route path='/usermanager' element={<UsersManager />} />
-                <Route path='/' element={<Dashboard />} />
-              </Route>
+      <Routes>
+        <Route path='/login' element={<FormLogin />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path='/' element={<LayoutApp />}>
+            <Route path='/bookingmanagement' element={<BookingCalendar />} />
+            <Route element={<PrivateRoute />}>
+              <Route path='/roomManager' element={<Rooms />} />
+              <Route path='/roomManager/:id' element={<RoomDetails />} />
+              <Route path='/usermanager' element={<UsersManager />} />
+              <Route path='/' element={<Dashboard />} />
             </Route>
           </Route>
-        </Routes>
+        </Route>
+      </Routes>
     </div>
   );
 }

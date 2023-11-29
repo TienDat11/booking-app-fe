@@ -5,12 +5,10 @@ import axios from 'axios';
 import confirm from './Confirm';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
-import getCookie from './route/Cookie';
-
 
 const { Title, Text } = Typography;
 
-const url: string = 'https://6158-210-245-110-144.ngrok-free.app';
+const url: string = 'https://08d0-210-245-110-144.ngrok-free.app';
 const FormLogin: React.FC = () => {
   const Navigate = useNavigate();
   const [form] = Form.useForm();
@@ -18,8 +16,8 @@ const FormLogin: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const handleClose = () => {
     Modal.destroyAll();
-    Navigate('/login')
-  }
+    Navigate('/login');
+  };
 
   const handleError = (errorMessage: string) => {
     Modal.destroyAll();
@@ -33,15 +31,15 @@ const FormLogin: React.FC = () => {
         withCredentials: true,
       })
       .then(res => {
-        const token: string = res.data.access_token;
-        const roles: string[] = res.data.role_name;
-        const name: string = res.data.user_name;
+        const token: string = res.data.data[0].token;
+        const roles: string[] = res.data.data[1].role_name;
+        const name: string = res.data.data[2].user_name;
         Cookies.set('roles', JSON.stringify(roles));
         Cookies.set('token', token);
         Cookies.set('name', name);
-        if(roles.includes('admin')){
+        if (roles.includes('admin')) {
           Navigate('/');
-        }else{
+        } else {
           Navigate('/bookingmanagement');
         }
       })
@@ -148,5 +146,3 @@ const FormLogin: React.FC = () => {
 };
 
 export default FormLogin;
-
-

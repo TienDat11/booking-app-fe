@@ -42,3 +42,9 @@
     transform: rotate(360deg);
   }
 }
+
+.search .ant-space-item:first-child{ width: 100%;}
+.component-name {
+  display: flex;
+  margin-top: 0;
+}

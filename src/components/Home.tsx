@@ -66,10 +66,11 @@ const BookingCalendar = () => {
   const [form] = Form.useForm();
   const modalRoot = document.createElement('div');
   document.body.appendChild(modalRoot);
-  const url = 'https://6158-210-245-110-144.ngrok-free.app';
+  const url = 'https://08d0-210-245-110-144.ngrok-free.app';
   const token = getCookie('token');
   const roles: string = getCookie('roles');
   const checkAdmin: boolean = roles.includes('admin');
+  const [monthCellRender, setMonthCellRender] = useState<Dayjs>();
   const fetchEmployees = async () => {
     try {
       const res = await axios.get(url + '/v1/users', {
@@ -141,6 +142,18 @@ const BookingCalendar = () => {
     fetchEmployees();
     fetchRooms();
   }, []);
+
+
+
+  const renderMonthCell = (date: Dayjs ) => {
+    if(monthCellRender && date.isSame(monthCellRender,'month')){
+      return (
+        <div>
+          <p>{date.date()}</p>
+        </div>
+      )
+    }
+  }
 
   const handleDateSelect = (value: Dayjs) => {
     const selectedDate = value.format('YYYY-MM-DD');
@@ -352,6 +365,7 @@ const BookingCalendar = () => {
               value={selectedDate}
               onSelect={handleDateSelect}
               dateCellRender={dateCellRender}
+              monthCellRender={renderMonthCell}
             />
           </div>
         </>
@@ -388,7 +402,11 @@ const BookingCalendar = () => {
         afterClose={handleUpdateModalClose}
       >
         <Form form={form} onFinish={handleCreateBooking} preserve={false}>
-          <Form.Item name='room_id' label='Room'>
+          <Form.Item name='room_id' label='Room'
+          rules={[
+            {required: true, message:'Room is not empty'}
+          ]}
+          >
             <Select placeholder='Select a room'>
               {rooms?.map(room => (
                 <Select.Option key={room.room_id} value={room.room_id}>
@@ -397,7 +415,11 @@ const BookingCalendar = () => {
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name='user_id' label='Employees'>
+          <Form.Item name='user_id' label='Employees'
+          rules={[
+            {required: true, message: 'Employees is not empty'}
+          ]}
+          >
             <Select
               mode='multiple'
               placeholder='Select employees'
@@ -414,21 +436,33 @@ const BookingCalendar = () => {
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name='time_start' label='Start Time'>
+          <Form.Item name='time_start' label='Start Time'
+          rules={[
+            {required: true, message: 'Time start is not empty'}
+          ]}
+          >
             <DatePicker
               showTime
               format='YYYY-MM-DD HH:mm'
               placeholder='Select start time'
             />
           </Form.Item>
-          <Form.Item name='time_end' label='End Time'>
+          <Form.Item name='time_end' label='End Time'
+           rules={[
+            {required: true, message: 'Time end is not empty'}
+          ]}
+          >
             <DatePicker
               showTime
               format='YYYY-MM-DD HH:mm'
               placeholder='Select end time'
             />
           </Form.Item>
-          <Form.Item name='title' label='Title'>
+          <Form.Item name='title' label='Title'
+           rules={[
+            {required: true, message: 'Title is not empty'}
+          ]}
+          >
             <Input type='text' />
           </Form.Item>
           <Form.Item style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -472,10 +506,10 @@ const BookingCalendar = () => {
                   columnGap: '5%',
                 }}
               >
-                <Popover content='Edit Room'>
+                <Popover content='Edit '>
                   <Button onClick={handleEditModalOpen}>Edit</Button>
                 </Popover>
-                <Popover content='Delete Room'>
+                <Popover content='Delete '>
                   <Button danger onClick={handleDeleteModalOpen}>
                     Delete
                   </Button>
@@ -588,7 +622,11 @@ const BookingCalendar = () => {
           }}
           preserve={false}
         >
-          <Form.Item name='user_id' label='Employees'>
+          <Form.Item name='user_id' label='Employees'
+          rules={[
+            {required: true, message: 'Employees is not empty'}
+          ]}
+          >
             <Select
               mode='multiple'
               placeholder='Select employees'
@@ -605,21 +643,39 @@ const BookingCalendar = () => {
               ))}
             </Select>
           </Form.Item>
-          <Form.Item name='time_start' label='Start Time'>
+          <Form.Item name='time_start' label='Start Time'
+          rules={[
+            {
+              required:true, message:'Time start is not required'
+            }
+          ]}
+          >
             <DatePicker
               showTime
               format='YYYY-MM-DD HH:mm'
               placeholder='Select start time'
             />
           </Form.Item>
-          <Form.Item name='time_end' label='End Time'>
+          <Form.Item name='time_end' label='End Time'
+          rules={[
+            {
+              required:true, message:'Time end is not required'
+            }
+          ]}
+          >
             <DatePicker
               showTime
               format='YYYY-MM-DD HH:mm'
               placeholder='Select end time'
             />
           </Form.Item>
-          <Form.Item name='title' label='Title'>
+          <Form.Item name='title' label='Title'
+          rules={[
+            {
+              required:true, message:'Title is not required'
+            }
+          ]}
+          >
             <Input type='text' />
           </Form.Item>
           <Form.Item style={{ display: 'flex', justifyContent: 'flex-end' }}>

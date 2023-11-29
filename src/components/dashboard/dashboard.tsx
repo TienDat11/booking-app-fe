@@ -8,7 +8,7 @@ import './dashboard.css'
 import getCookie from '../route/Cookie';
 const Dashboard = () => {
   const token = getCookie('token');
-  const url = 'https://6158-210-245-110-144.ngrok-free.app'
+  const url = 'https://e920-117-2-6-32.ngrok-free.app'
   interface DataUserType {
     user_name: string,
     phone_number: string,
@@ -37,27 +37,17 @@ const Dashboard = () => {
   const [totalRoom, setTotalRoom] = useState<number>()
   const [loading, setLoading] = useState<boolean>(true);
   
-
   const getData = async () => {
     setLoading(true);
     try {
-      await axios.get(url + "/v1/bookings", {
-        withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }).then(res => {
-        setListBooking(res.data.bookings)
-        setTotalBooking(res.data.total_items)
-      })
       await axios.get(url + "/v1/users", {
         withCredentials: true,
         headers: {
           Authorization: `Bearer ${token}`,
         },
       }).then(res => {
-        setListusers(res.data.list_users)
-        setTotalUser(res.data.total_items)
+        setListusers(res.data.data.users)
+        setTotalUser(res.data.data.total_items)
       })
       await axios.get(url + "/v1/rooms", {
         withCredentials: true,
@@ -67,6 +57,15 @@ const Dashboard = () => {
       }).then(res => {
         setListRoom(res.data.rooms)
         setTotalRoom(res.data.total_items)
+      })
+      await axios.get(url + "/v1/bookings", {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).then(res => {
+        setListBooking(res.data.bookings)
+        setTotalBooking(res.data.total_items)
       })
     } catch (error) {
     } finally{
@@ -102,6 +101,7 @@ const Dashboard = () => {
 
   return (
     <div >
+      <h2 className='component-name'>Dashboard</h2>
       {loading ? (
         <Spin
         size="large"
@@ -110,18 +110,17 @@ const Dashboard = () => {
           position: 'fixed',
           top: '50%',
           left: '50%',
-          transform: 'translate(-50%, -50%)',
+          transform: 'translate(-75%, -75%)',
           fontSize: '24px',
           color: '#ff0000'
         }}
       />
       ) : (
-        <>
-        
-        <Space style={{marginBottom: 20}} >
+        <>       
+        <Space style={{marginBottom: 20, display:'flex', justifyContent:'space-between'}} >
         <Space direction='horizontal' >
             <Link to={'/bookingmanager'}>
-            <Card hoverable style={{ width: 370, background: '#ebe1f6' }}>
+            <Card hoverable style={{ width: 400, background: '#ebe1f6' }}>
               <Space direction='horizontal' className='card-total'>
                 <CheckCircleOutlined style={{
                   color: "blue",
@@ -140,7 +139,7 @@ const Dashboard = () => {
           </Space>
           <Space direction='horizontal' >
             <Link to={'/usermanager'} >
-            <Card hoverable style={{ width: 370, background: 'pink' }}>
+            <Card hoverable style={{ width:400, background: 'pink' }}>
               <Space direction='horizontal' className='card-total' >
                 <UserOutlined style={{
                   color: "purple",
@@ -157,7 +156,7 @@ const Dashboard = () => {
           </Space>
           <Space direction='horizontal' >
             <Link to={'/roomnanager'}>
-            <Card hoverable style={{ width: 370, background: '#f7dce2' }}>
+            <Card hoverable style={{ width: 400, background: '#f7dce2' }}>
               <Space direction='horizontal' className='card-total'>
                 <HomeOutlined style={{
                   color: "red",
@@ -175,7 +174,8 @@ const Dashboard = () => {
           </Space>
         </Space>
   
-        <Table style={{ width: 700, position:'relative',top:'50%',left:'22%' }} dataSource={list_users} columns={columns} pagination={{ pageSize: 5, position: ['bottomCenter'] }} />
+        <Table style={{ position:'relative' }} dataSource={list_users} columns={columns} pagination={{ pageSize: 5, position: ['bottomCenter'] }} />
+
         </>
       )}
       </div>

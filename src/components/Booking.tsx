@@ -19,7 +19,7 @@ import getCookie from './route/Cookie';
 const { Option } = Select;
 const { Title } = Typography;
 
-const url = 'https://c1a4-210-245-110-144.ngrok-free.app';
+const url = 'https://08d0-210-245-110-144.ngrok-free.app';
 
 interface DataType {
   user_id: number;
