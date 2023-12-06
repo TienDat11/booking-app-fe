@@ -1,70 +1,52 @@
 import { Button, Checkbox, Col, Form, Input, Modal, Row, notification } from "antd";
-import React, { useEffect, useState } from "react";
-import { DataType } from "../constant/constant";
+import React, { useState } from "react";
+import { DataType, TYPE_USER } from "../constant/constant";
 import axios from "axios";
 import { url } from "../ultils/urlApi";
 import getCookie from "../route/Cookie";
-
-const FormEdit = ({ onModalEditUser, data }) => {
+import { handleError, handleSuccess } from "../ultils/ultilsApi";
+import { showPopup } from "../ultils/Popup";
+interface FormEditProps {
+  onModalEditUser: (status: boolean) => void;
+  data: DataType | undefined;
+  onEditUser: (editUser: DataType) => void;
+}
+const FormEdit: React.FC<FormEditProps> = ({ onModalEditUser, data, onEditUser }) => {
   const [form] = Form.useForm();
   const token = getCookie("token");
-  const [list_users, setListUsers] = useState<DataType[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-
-  const getData = async () => {
-    setLoading(true);
-    try {
-      await axios
-        .get(url + "/v1/users", {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        .then((response) => {
-          setListUsers(response.data.data.users);
-        });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => {
-    getData();
-  }, []);
-  console.log("edit",data)
+  const role = getCookie('roles');
+  let apiurl: string = ''
 
   const handleUpdate = async (value: any) => {
+    console.log('update với value', value, ' role ', role)
     if (data) {
       try {
+        setLoading(true)
+        { role.includes('admin') ? apiurl = "/v1/users/" + data.user_id : apiurl = "/v1/users/profile" }
         await axios
-          .put(url + "/v1/users/" + data.user_id, value, {
+          .put(url + apiurl, value, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           })
-          .then((response) => {
-            getData();
-            Modal.success({
-              content: response.data.message,
-            });
+          .then((response: any) => {
+            onEditUser(value)
+            const { message } = handleSuccess(response);
+            showPopup(true, message);
             onModalEditUser(false);
           })
-          .catch((error) => {
-            console.log(error);
-            notification.error({
-              message: error.response.data.data.error,
-            });
-          });
-      } catch (error) {
-        console.log(error);
+      } catch (error: any) {
+        const { message, errors }: any = handleError(error);
+        const messageErrors = message + " " + errors;
+        showPopup(false, messageErrors);
+      } finally {
+        setLoading(false)
       }
-    }
-  };
+    };
+  }
   return (
     <>
-
       <div style={{ padding: 20 }}>
         <Form
           name="validateOnly"
@@ -90,6 +72,18 @@ const FormEdit = ({ onModalEditUser, data }) => {
             <Input />
           </Form.Item>
           <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              { required: true, message: "Please input email!" },
+              { type: "email", message: "Invalid email format" },
+              { whitespace: true },
+            ]}
+            hasFeedback
+          >
+            <Input disabled />
+          </Form.Item>
+          <Form.Item
             label="Phone Number"
             name="phone_number"
             rules={[
@@ -100,38 +94,40 @@ const FormEdit = ({ onModalEditUser, data }) => {
               },
               { whitespace: true },
               { min: 10, message: "Phone number has at least 10 numbers" },
+              { max: 10, message: "Phone number has at most 10 numbers"}
             ]}
             hasFeedback
           >
             <Input />
           </Form.Item>
-          <Form.Item
-            name="role_id"
-            label="Role"
-            rules={[{ required: true, message: "Please select role!" }]}
-            hasFeedback
-          >
-            <Checkbox.Group>
-              <Row>
-                <Col span={12}>
-                  <Checkbox value={2} style={{ lineHeight: "32px" }}>
-                    User
-                  </Checkbox>
-                </Col>
-                <Col span={12}>
-                  <Checkbox value={1} style={{ lineHeight: "32px" }}>
-                    Admin
-                  </Checkbox>
-                </Col>
-              </Row>
-            </Checkbox.Group>
-          </Form.Item>
-          <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-            <Button type="primary" htmlType="submit">
-              Update
-            </Button>
-          </Form.Item>
+          {role.includes('admin') ? (
+            <Form.Item
+              name="role_id"
+              label="Role"
+              rules={[{ required: true, message: "Please select role!" }]}
+              hasFeedback
+            >
+              <Checkbox.Group  >
+                <Row>
+                  <Col span={12}>
+                    <Checkbox value={1} style={{ lineHeight: "32px" }}>
+                      Admin
+                    </Checkbox>
+                  </Col>
+                  <Col span={12}>
+                    <Checkbox value={2} style={{ lineHeight: "32px" }}>
+                      User
+                    </Checkbox>
+                  </Col>
+                </Row>
+              </Checkbox.Group>
+            </Form.Item>
+          ) : null}
+          <Button style={{ width: 200 }} type="primary" htmlType="submit" loading={loading}>
+            Update
+          </Button>
         </Form>
+
       </div>
     </>
   );

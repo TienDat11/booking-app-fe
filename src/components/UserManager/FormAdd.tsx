@@ -6,44 +6,24 @@ import {
   Input,
   Modal,
   Row,
-  Spin,
-  notification,
 } from "antd";
 import React from "react";
 import axios from "axios";
 import { url } from "../ultils/urlApi";
 import getCookie from "../route/Cookie";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DataType } from "../constant/constant";
+import { handleSuccess, handleError } from "../ultils/ultilsApi";
+import { showPopup } from "../ultils/Popup";
 
-const FormAdd = ({ onModalAddUser }) => {
+interface FormAddProps {
+  onModalAddUser: (status: boolean) => void;
+  onAddUser: (addUser: DataType) => void;
+}
+const FormAdd: React.FC<FormAddProps> = ({ onModalAddUser, onAddUser }) => {
   const [form] = Form.useForm();
   const token = getCookie("token");
-  const [list_users, setListUsers] = useState<DataType[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-
-  const getData = async () => {
-    setLoading(true);
-    try {
-      await axios
-        .get(url + "/v1/users", {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        .then((response) => {
-          setListUsers(response.data.data.users);
-        });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  useEffect(() => {
-    getData();
-  }, []);
 
   const handleSubmit = async (value: any) => {
     setLoading(true);
@@ -55,30 +35,17 @@ const FormAdd = ({ onModalAddUser }) => {
           },
         })
         .then((response) => {
-          getData();
-          Modal.success({
-            content: response.data.message,
-          });
-          onModalAddUser(false);
+          onAddUser(value)
+          const { message } = handleSuccess(response);
+          showPopup(true, message);
+          onModalAddUser(false)
         })
-        .catch((error) => {
-            setLoading(false);
-          error.response.data.message === "Conflict"
-            ? notification.error({
-                message: error.response.data.errors,
-                duration: 5,
-              })
-            : error.response.data.errors.map((error: any) => {
-                notification.error({
-                  message: error.field,
-                  description: error.error,
-                  duration: 5,
-                });
-              });
-        });
-    } catch (error) {
-    
-
+    } catch (error: any) {
+      const { message, errors }: any = handleError(error);
+      const messageErrors = message + " " + errors;
+      showPopup(false, messageErrors);
+    } finally {
+      setLoading(false)
     }
   };
   return (
@@ -121,10 +88,9 @@ const FormAdd = ({ onModalAddUser }) => {
           name="phone_number"
           rules={[
             { required: true, message: "Please input phone-number!" },
-            {
-              min: 10,
-              message: "Phone number has at least 10 numbers",
-            },
+            { min: 10, message: "Phone number has at least 10 numbers" },
+            { max: 10, message: "Phone number has at most 10 numbers" },
+
             { whitespace: true },
             {
               pattern: /^\d+$/,
@@ -141,10 +107,11 @@ const FormAdd = ({ onModalAddUser }) => {
           rules={[
             { required: true, message: "Please input password!" },
             { whitespace: true, message: "Please input password!" },
+            { min: 8, message: "Password has at least 8 letters " }
           ]}
           hasFeedback
         >
-          <Input placeholder="Password" type="password" required />
+          <Input.Password placeholder="Password" />
         </Form.Item>
         <Form.Item
           name="role_id"
@@ -167,12 +134,11 @@ const FormAdd = ({ onModalAddUser }) => {
             </Row>
           </Checkbox.Group>
         </Form.Item>
-        <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-          <Button type="primary" htmlType="submit" disabled={loading}>
-            {loading ? <Spin spinning={loading} /> : "Submit"}
-          </Button>
-        </Form.Item>
+        <Button style={{ width: 200 }} loading={loading} type="primary" htmlType="submit" >
+          Submit
+        </Button>
       </Form>
+
     </div>
   );
 };

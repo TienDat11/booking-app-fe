@@ -9,6 +9,8 @@ import Rooms from './components/room/Room';
 import UsersManager from './components/UserManager/UserManager';
 import Dashboard from './components/dashboard/dashboard';
 import RoomDetails from './components/room/RoomDetails';
+import InfoUser from './components/InfoAccount/InfoUser';
+import ListBookingOfUser from './components/Booking/ListBookingOfUser';
 
 function App() {
   return (
@@ -18,6 +20,9 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path='/' element={<LayoutApp />}>
             <Route path='/bookingmanagement' element={<BookingCalendar />} />
+            <Route path='/informationaccount' element = {<InfoUser/>}/>
+            <Route path='/bookingroom' element={<ListBookingOfUser/>}/>
+
             <Route element={<PrivateRoute />}>
               <Route path='/roomManager' element={<Rooms />} />
               <Route path='/roomManager/:id' element={<RoomDetails />} />

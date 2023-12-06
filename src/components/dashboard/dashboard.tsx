@@ -55,8 +55,8 @@ const Dashboard = () => {
           Authorization: `Bearer ${token}`,
         },
       }).then(res => {
-        setListRoom(res.data.rooms)
-        setTotalRoom(res.data.total_items)
+        setListRoom(res.data.data.rooms)
+        setTotalRoom(res.data.data.total_items)
       })
       await axios.get(url + "/v1/bookings", {
         withCredentials: true,
@@ -64,8 +64,8 @@ const Dashboard = () => {
           Authorization: `Bearer ${token}`,
         },
       }).then(res => {
-        setListBooking(res.data.bookings)
-        setTotalBooking(res.data.total_items)
+        setListBooking(res.data.data.bookings)
+        setTotalBooking(res.data.data.total_items)
       })
     } catch (error) {
     } finally{

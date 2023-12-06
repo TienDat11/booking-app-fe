@@ -8,6 +8,8 @@ const getCookie = (str: string) => {
       return Cookies.get('token');
     case 'name':
       return Cookies.get('name');
+    case 'id': 
+    return Cookies.get('id')
     default:
       console.log('Not Found');
       break;

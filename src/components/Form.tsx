@@ -5,10 +5,10 @@ import axios from 'axios';
 import confirm from './Confirm';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
+import { url } from './ultils/urlApi';
 
 const { Title, Text } = Typography;
 
-const url: string = 'https://08d0-210-245-110-144.ngrok-free.app';
 const FormLogin: React.FC = () => {
   const Navigate = useNavigate();
   const [form] = Form.useForm();
@@ -34,9 +34,11 @@ const FormLogin: React.FC = () => {
         const token: string = res.data.data[0].token;
         const roles: string[] = res.data.data[1].role_name;
         const name: string = res.data.data[2].user_name;
+        const id : number = res.data.data[3].user_id
         Cookies.set('roles', JSON.stringify(roles));
         Cookies.set('token', token);
         Cookies.set('name', name);
+        Cookies.set('id', id.toString());
         if (roles.includes('admin')) {
           Navigate('/');
         } else {
@@ -45,7 +47,7 @@ const FormLogin: React.FC = () => {
       })
       .catch(error => {
         const errorMessage =
-          error.response?.data?.description || 'Có 1 lỗi xảy ra từ server';
+          error.response.data.description || 'Có 1 lỗi xảy ra từ server';
         handleError(errorMessage);
       });
 

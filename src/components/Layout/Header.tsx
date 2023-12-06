@@ -1,14 +1,15 @@
 import { DownOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons';
-import { Avatar, Button, Dropdown, Menu, MenuProps, Space } from 'antd';
+import { Avatar, Button, Dropdown, Menu, MenuProps, Modal, Space } from 'antd';
 import { Header } from "antd/es/layout/layout";
 
-import React from 'react'
+import React, { useState } from 'react'
 import getCookie from '../route/Cookie';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import ChangePassword from '../InfoAccount/ChangePassword';
 
 const HeaderComponent = () => {
- const role = getCookie("roles");
+  const role = getCookie("roles");
   const name = getCookie("name");
   const navigator = useNavigate();
   const handleLogout = () => {
@@ -18,8 +19,18 @@ const HeaderComponent = () => {
     }
     navigator("/login");
   };
+  const [isopen, setIsOpen] = useState(false)
+  const handleChange = (status: boolean) => {
+    setIsOpen(status)
+
+  }
+  const handleCancel = () => {
+    handleChange(false)
+  }
   const handleNavigate = (key: string) => {
-    navigator(key);
+    (key === 'changepassword') ? (
+      handleChange(true)
+    ) : (navigator(key))
   };
   const items: MenuProps["items"] = [
     {
@@ -30,7 +41,7 @@ const HeaderComponent = () => {
     {
       label: "Change password",
       icon: <UserOutlined />,
-      key: "changpassword",
+      key: "changepassword",
     },
     {
       label: " Logout",
@@ -38,9 +49,10 @@ const HeaderComponent = () => {
       key: "logout",
     },
   ];
-  
+
   return (
-    <Header
+    <>
+      <Header
         style={{
           position: "sticky",
           top: 0,
@@ -53,28 +65,28 @@ const HeaderComponent = () => {
         }}
       >
         <h1>BookingMeetingRoom</h1>
-        {(role.includes("user")) ? (
-    <Menu
-      className="menu"
-      onClick={({ key }) => {
-        navigator(key);
-      }}
-      theme="light"
-      mode="horizontal"
-      defaultSelectedKeys={["/"]}
-      items={[
-        {
-          key: "/",
-          label: "Calendar",
-        },
-        {
-          key: "/bookingroom",
-          label: "Booking room",
-        },
-      ]}
-    />
-  ): ( []) }
-        
+        {!(role.includes("admin")) ? (
+          <Menu
+            className="menu"
+            onClick={({ key }) => {
+              navigator(key);
+            }}
+            theme="light"
+            mode="horizontal"
+            defaultSelectedKeys={["/"]}
+            items={[
+              {
+                key: "/",
+                label: "Calendar",
+              },
+              {
+                key: "/bookingroom",
+                label: "Booking room",
+              },
+            ]}
+          />
+        ) : ([])}
+
         <Dropdown
           overlay={
             <Menu
@@ -116,6 +128,18 @@ const HeaderComponent = () => {
           </Button>
         </Dropdown>
       </Header>
+
+      <Modal
+        title="Change password"
+        destroyOnClose={true}
+        open={isopen}
+        footer={[]}
+        onCancel={handleCancel}
+        style={{ width: "500px", textAlign: "center" }}
+      >
+        <ChangePassword onChange={handleChange} />
+      </Modal>
+    </>
   )
 }
 

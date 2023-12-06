@@ -17,6 +17,7 @@ import {
 import dayjs, { Dayjs } from 'dayjs';
 import axios from 'axios';
 import getCookie from './route/Cookie';
+import { url } from './ultils/urlApi';
 
 const { Title } = Typography;
 
@@ -66,7 +67,6 @@ const BookingCalendar = () => {
   const [form] = Form.useForm();
   const modalRoot = document.createElement('div');
   document.body.appendChild(modalRoot);
-  const url = 'https://08d0-210-245-110-144.ngrok-free.app';
   const token = getCookie('token');
   const roles: string = getCookie('roles');
   const checkAdmin: boolean = roles.includes('admin');

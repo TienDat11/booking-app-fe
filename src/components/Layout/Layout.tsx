@@ -4,7 +4,7 @@ import {
 } from "antd";
 import HeaderComponent from "./Header";
 import SiderComponent from "./Sider";
-const {Content } = Layout;
+const { Content } = Layout;
 const LayoutApp = () => {
   return (
     <Layout>
@@ -16,8 +16,9 @@ const LayoutApp = () => {
             marginTop: 13,
             marginLeft:13,
             padding: 24,
-            minHeight: 900,
+            // minHeight: 900,
             background: "white",
+            zIndex:'0',
           }}
         >
           <Outlet />

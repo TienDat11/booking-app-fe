@@ -48,3 +48,8 @@
   display: flex;
   margin-top: 0;
 }
+
+.ant-modal-body .ant-modal-confirm-paragraph{
+  max-width: 100%;
+}
+
