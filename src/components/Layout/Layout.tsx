@@ -16,7 +16,7 @@ const LayoutApp = () => {
             marginTop: 13,
             marginLeft:13,
             padding: 24,
-            // minHeight: 900,
+            minHeight: 900,
             background: "white",
             zIndex:'0',
           }}

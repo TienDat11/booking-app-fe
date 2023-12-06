@@ -33,6 +33,11 @@ const SiderComponent = () => {
                   label: "Dashboard",
                 },
                 {
+                  key: "/calendarmeeting",
+                  icon: <AppstoreOutlined />,
+                  label: "Calendar Meeting",
+                },
+                {
                   key: "/roomManager",
                   icon: <HomeOutlined />,
                   label: "Room Manager",

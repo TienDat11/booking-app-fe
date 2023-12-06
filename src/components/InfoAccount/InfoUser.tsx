@@ -6,6 +6,8 @@ import { DataType } from '../constant/constant';
 import getCookie from '../route/Cookie';
 import FormEdit from '../UserManager/FormEdit';
 import './InfoAccount.css'
+import { handleError } from '../ultils/ultilsApi';
+import { showPopup } from '../ultils/Popup';
 
 const InfoUser = () => {
   const [infoUser, setInfoUser] = useState<DataType>()
@@ -25,13 +27,15 @@ const InfoUser = () => {
           setInfoUser(response.data.data);
         });
     } catch (error) {
-      console.error(error);
+      const { message, errors }: any = handleError(error);
+            const messageErrors = message + " " + errors;
+            showPopup(false, messageErrors);
     } finally {
     }
   };
-  useEffect(() => {
+  useEffect(()=>{
     getData();
-  }, []);
+  }, [ ])
   const handleEditUser = (editUser: DataType) => {
     if (editUser) {
       setInfoUser((prevUser) => ({
@@ -41,10 +45,6 @@ const InfoUser = () => {
 
     }
   };
-  const handleShowModal = () => {
-    handleModalEditUser(true)
-
-  }
   const handleModalEditUser = (status: boolean) => {
     setIsModalEditOpen(status);
   };
@@ -63,9 +63,9 @@ const InfoUser = () => {
       <h1 className='component-name'>Account information</h1>
       <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}>
         <Descriptions style={{ width: 500, paddingRight: 100 }} layout="horizontal" column={1} >
-          <Descriptions.Item contentStyle={customContentStyle} labelStyle={customLabelStyle} label="User Name"> {infoUser?.user_name}</Descriptions.Item>
-          <Descriptions.Item contentStyle={customContentStyle} labelStyle={customLabelStyle} label="Email">{infoUser?.email} </Descriptions.Item>
-          <Descriptions.Item contentStyle={customContentStyle} labelStyle={customLabelStyle} label="Phone number"> {infoUser?.phone_number}</Descriptions.Item>
+          <Descriptions.Item contentStyle={customContentStyle} labelStyle={customLabelStyle} label="User Name"> {infoUser!.user_name}</Descriptions.Item>
+          <Descriptions.Item contentStyle={customContentStyle} labelStyle={customLabelStyle} label="Email">{infoUser!.email} </Descriptions.Item>
+          <Descriptions.Item contentStyle={customContentStyle} labelStyle={customLabelStyle} label="Phone number"> {infoUser!.phone_number}</Descriptions.Item>
           <Descriptions.Item >
             <div className='btn-edit-info'>
               <Button style={{ marginTop: 20 }} type="primary" htmlType="submit" onClick={() => handleModalEditUser(true)}>Edit</Button>

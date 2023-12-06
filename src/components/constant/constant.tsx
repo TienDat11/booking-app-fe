@@ -1,6 +1,7 @@
-import { Dayjs } from "dayjs";
+import moment from "moment";
 import getCookie from "../route/Cookie";
-import { useState } from "react";
+import { Tag } from "antd";
+import { Dayjs } from "dayjs";
 
 export const TYPE_USER = { ADMIN : 'admin', USER : 'user'}
 export interface DataType {
@@ -14,14 +15,44 @@ export interface DataType {
   }
 
 export interface BookingData {
+  booking_id: number;
+  creator_name: string;
   room_name: string;
   title: string;
   user_name: string[];
+  user_ids: number[];
   time_start: string;
   time_end: string;
-  status: boolean;
+  is_eccept: boolean;
   is_deleted: boolean;
-
   
 }
+
+
+export const statuTag = (item: BookingData) => {
+  if (item.is_deleted) {
+    return (
+      <Tag className="status-tag" color="#ff0000">
+        Rejected
+      </Tag>
+    );
+  } else if (item.is_eccept) {
+    return (
+      <Tag className="status-tag" color="#009900">
+        Successed
+      </Tag>
+    );
+  } else {
+    return (
+      <Tag className="status-tag" color="#ff9933">
+        Pending
+      </Tag>
+    );
+  }
+};
+
+
+
+
+
  export const token = getCookie("token");

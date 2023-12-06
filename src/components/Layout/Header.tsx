@@ -128,9 +128,9 @@ const HeaderComponent = () => {
           </Button>
         </Dropdown>
       </Header>
-
+      
       <Modal
-        title="Change password"
+        title="Change passwordpassword"
         destroyOnClose={true}
         open={isopen}
         footer={[]}
